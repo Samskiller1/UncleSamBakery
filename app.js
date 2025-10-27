@@ -8,7 +8,7 @@ const products = [
   { id: 6, name: "Banana Cake", price: 1000, image: "images/banana-cake.jpg" },
   { id: 7, name: "Plain Cake", price: 800, image: "images/plain-cake.jpg" },
   { id: 8, name: "Special Cake", price: 2100, image: "images/special-cake.jpg" },
-  { id: 9, name: "Mega Cake", price: 1500, image: "images/mega-cake.jpg" }
+  { id: 9, name: "Mega Cake", price: 3000, image: "images/mega-cake.jpg" }
 ];
 
 // --- Cart stored in localStorage ---
@@ -246,3 +246,4 @@ document.addEventListener('DOMContentLoaded', function() {
   const mpesaAmount = document.getElementById('mpesa-amount');
   if (subtotalEl && mpesaAmount) mpesaAmount.value = subtotalEl.textContent || '0';
 });
+
