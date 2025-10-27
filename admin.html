@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin – UNCLE SAM BAKERY</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* keep small admin-specific styles here */
+    .admin { max-width:1100px; margin:1.2rem auto; padding:1rem; }
+    .toolbar { display:flex; gap:1rem; justify-content:space-between; align-items:center; }
+    .orders { margin-top:1rem; }
+    table { width:100%; border-collapse: collapse; }
+    th,td { padding:.6rem; border-bottom:1px solid #eee; text-align:left; vertical-align:middle; }
+    .status { font-weight:700; padding:.25rem .5rem; border-radius:6px; color:#fff; }
+    .status.Pending { background:#ff9800; }
+    .status.Paid { background:#4caf50; }
+    .status.Delivered { background:#009688; }
+    .status.Failed { background:#e53935; }
+    .small { font-size:.9rem; color:#666; }
+    input[type=text], select { padding:.5rem; border-radius:6px; border:1px solid #ddd; }
+    .btn { padding:.45rem .6rem; border-radius:8px; border:none; cursor:pointer; background:#ff6fb5; color:#fff; font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="admin">
+    <div class="toolbar">
+      <h2>Admin Dashboard</h2>
+      <div id="auth-area">
+        <input id="admin-user" placeholder="username" />
+        <input id="admin-pass" type="password" placeholder="password" />
+        <button id="btn-login" class="btn">Login</button>
+      </div>
+    </div>
+
+    <section id="stats" class="small"></section>
+
+    <section class="orders">
+      <h3>Orders</h3>
+      <table id="orders-table">
+        <thead><tr><th>ID</th><th>Items</th><th>Phone</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="comments">
+      <h3>Comments</h3>
+      <table id="comments-table">
+        <thead><tr><th>Name</th><th>Comment</th><th>Created</th><th>Moderated</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('adminToken');
+    const authArea = document.getElementById('auth-area');
+
+    async function api(path, opts = {}) {
+      opts.headers = opts.headers || {};
+      if (token) opts.headers.Authorization = 'Bearer ' + token;
+      const res = await fetch(path, opts);
+      if (res.status === 401) {
+        token = null; localStorage.removeItem('adminToken'); renderAuth();
+        throw new Error('Unauthorized');
+      }
+      return res.json();
+    }
+
+    function renderAuth() {
+      if (token) {
+        authArea.innerHTML = '<button id="btn-logout" class="btn">Logout</button>';
+        document.getElementById('btn-logout').addEventListener('click', () => {
+          token = null; localStorage.removeItem('adminToken'); renderAuth();
+        });
+      } else {
+        authArea.innerHTML = `
+          <input id="admin-user" placeholder="username" />
+          <input id="admin-pass" type="password" placeholder="password" />
+          <button id="btn-login" class="btn">Login</button>
+        `;
+        document.getElementById('btn-login').addEventListener('click', login);
+      }
+    }
+
+    async function login() {
+      const user = document.getElementById('admin-user').value;
+      const pass = document.getElementById('admin-pass').value;
+      try {
+        const res = await fetch('/admin/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: user, password: pass }) });
+        const data = await res.json();
+        if (data.token) {
+          token = data.token;
+          localStorage.setItem('adminToken', token);
+          renderAuth();
+          loadAll();
+        } else {
+          alert('Login failed');
+        }
+      } catch (e) { alert('Login error'); }
+    }
+
+    async function loadAll() {
+      try {
+        const stats = await api('/admin/stats');
+        document.getElementById('stats').textContent = `Orders: ${stats.totalOrders} | Paid: ${stats.paid} | Pending: ${stats.pending}`;
+        const orders = await api('/admin/orders');
+        renderOrders(orders);
+        const comments = await api('/admin/comments');
+        renderComments(comments);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.querySelector('#orders-table tbody');
+      tbody.innerHTML = '';
+      orders.forEach(o => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="small">${o._id}</td>
+          <td>${o.items.map(i => `${i.name}${i.qty? ' x'+i.qty: ''}`).join('<br>')}</td>
+          <td>${o.customerPhone || ''}</td>
+          <td>KES ${o.amount}</td>
+          <td><span class="status ${o.status}">${o.status}</span></td>
+          <td>
+            <select data-id="${o._id}" class="status-select">
+              <option>Pending</option><option>Baking</option><option>Out for Delivery</option><option>Delivered</option><option>Paid</option><option>Failed</option>
+            </select>
+            <button class="btn btn-update" data-id="${o._id}">Update</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        const sel = tr.querySelector('.status-select');
+        sel.value = o.status;
+        tr.querySelector('.btn-update').addEventListener('click', async () => {
+          const newStatus = sel.value;
+          await api('/admin/orders/' + o._id, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: newStatus })});
+          loadAll();
+        });
+      });
+    }
+
+    function renderComments(comments) {
+      const tbody = document.querySelector('#comments-table tbody');
+      tbody.innerHTML = '';
+      comments.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${c.name}</td>
+          <td>${c.comment}</td>
+          <td class="small">${new Date(c.createdAt).toLocaleString()}</td>
+          <td>${c.moderated ? 'Yes' : 'No'}</td>
+          <td>
+            <button class="btn" data-id="${c._id}" data-action="toggle">${c.moderated ? 'Unpublish':'Publish'}</button>
+            <button class="btn" data-id="${c._id}" data-action="delete">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelector('[data-action="toggle"]').addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          const updated = await api('/admin/comments/' + id, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ moderated: !c.moderated })});
+          loadAll();
+        });
+        tr.querySelector('[data-action="delete"]').addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          // quick delete via patch setting comment text (or implement delete route server-side)
+          await api('/admin/comments/' + id, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ comment: '[deleted]' , moderated: false })});
+          loadAll();
+        });
+      });
+    }
+
+    // Initialize
+    renderAuth();
+    if (token) loadAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Cart – UNCLE SAM BAKERY</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Your Cart</h1>
+    <nav>
+      <a href="index.html">🏠Home</a>
+  <a href="about.html">📍About</a>
+  <a href="contact.html">📞Contact</a>
+  <a href="cart.html">🛒 View Cart</a>
+    </nav>
+  </header>
+
+  <section id="cart">
+    <h2>Your Cart</h2>
+    <p><strong>Items:</strong> <span id="cart-count">0</span></p>
+    <ul id="cart-items"></ul>
+
+    <div id="cart-summary">
+      <p><strong>Subtotal:</strong> KES <span id="cart-subtotal">0</span></p>
+      <button id="clear-cart">Clear Cart</button>
+    </div>
+
+    <div id="checkout-actions">
+      <button id="place-order">Place Order</button>
+    </div>
+  </section>
+
+  <section id="mpesa-section">
+    <h2>Pay with M-Pesa</h2>
+    <form id="mpesa-form">
+      <label>Phone Number: <input name="phone" placeholder="2547XXXXXXXX" required /></label>
+      <label>Amount: <input name="amount" id="mpesa-amount" required /></label>
+      <button type="submit">Pay Now</button>
+    </form>
+    <p id="mpesa-msg"></p>
+  </section>
+
+  <footer>
+    <p>“Thanks for shopping with UNCLE SAM BAKERY!”</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Safe entry: if app.js defines needed functions, use them, otherwise provide minimal fallback
+    if (typeof renderCart === 'function') {
+      renderCart();
+    } else {
+      // fallback render if app.js not loaded yet
+      window.addEventListener('load', () => {
+        if (typeof renderCart === 'function') renderCart();
+      });
+    }
+// Create order first, then begin M-Pesa payment
+async function placeOrderAndPay() {
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  if (!cart.length) return alert('Cart empty');
+  // create order
+  const res = await fetch('/order', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ items: cart, phone: localStorage.getItem('customerPhone') || '' })
+  });
+  const { id } = await res.json();
+  // Start STK push
+  const amount = cart.reduce((s,i)=> s + i.price*(i.qty||1), 0);
+  const phone = document.querySelector('#mpesa-form input[name="phone"]').value;
+  const pay = await fetch('/pay', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ phone, amount, orderId: id })
+  });
+  const data = await pay.json();
+  alert('M-Pesa payment initiated. Check your phone.');
+}
+
+  </script>
+</body>
+</html>

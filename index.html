@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UNCLE SAM BAKERY</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>UNCLE SAM BAKERY</h1>
+    <nav>
+  <a href="index.html">🏠Home</a>
+  <a href="about.html">📍About</a>
+  <a href="contact.html">📞Contact</a>
+  <a href="cart.html">🛒 View Cart</a>
+</nav>
+
+  </header>
+
+  <section id="welcome-quote">
+    <blockquote>
+      “Welcome to UNCLE SAM BAKERY — where every bite tells a story of love, tradition, and sweetness.”
+    </blockquote>
+  </section>
+
+  <main id="product-list"></main>
+
+ 
+
+  <section id="mission">
+    <h2>Our Mission</h2>
+    <p>
+      At UNCLE SAM BAKERY, our mission is to craft irresistible baked goods that bring joy to every table.
+      We believe in using fresh ingredients, time-honored recipes, and a sprinkle of creativity to make every treat unforgettable.
+    </p>
+  </section>
+
+  <section id="custom-cake">
+    <h2>Build Your Custom Cake</h2>
+    <form id="cake-builder">
+      <label>Flavor: <input name="flavor" required /></label>
+      <label>Size:
+        <select name="size">
+          <option>Small</option><option>Medium</option><option>Large</option>
+        </select>
+      </label>
+      <label>Decoration: <input name="decoration" required /></label>
+      <label>Upload Image: <input type="file" name="image" /></label>
+      <button type="submit">Submit Custom Cake</button>
+    </form>
+  </section>
+
+  <section id="order-status">
+    <h2>Track Your Order</h2>
+    <input id="order-id" placeholder="Enter Order ID" />
+    <button onclick="checkStatus()">Check Status</button>
+    <p>Status: <span id="status-result">N/A</span></p>
+  </section>
+
+  <section id="comments">
+    <h2>Customer Comments</h2>
+    <form id="comment-form">
+      <label>Name: <input name="name" required /></label>
+      <label>Comment: <textarea name="comment" required></textarea></label>
+      <button type="submit">Post Comment</button>
+    </form>
+    <ul id="comment-list"></ul>
+  </section>
+
+<section id="mpesa-payment">
+  <h2>Pay with M-Pesa</h2>
+  <form id="mpesa-form">
+    <label>Phone Number: <input name="phone" required /></label>
+    <label>Amount: <input name="amount" required /></label>
+    <button type="submit">Pay Now</button>
+  </form>
+</section>
+ <section id="points">Loyalty Points: <span id="point-count">0</span></section>
+  <footer>
+    <p>“Thanks for stopping by — may your day be as sweet as our cakes!”</p>
+  </footer>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
